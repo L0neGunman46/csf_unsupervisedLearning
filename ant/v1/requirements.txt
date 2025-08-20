@@ -1,0 +1,13 @@
+torch
+seaborn
+gymnasium[mujoco]
+numpy
+pandas
+matplotlib
+tqdm
+torchvision
+wandb
+scikit-learn
+scipy
+imageio
+pyyaml

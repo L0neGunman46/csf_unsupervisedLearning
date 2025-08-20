@@ -1,0 +1,46 @@
+environment:
+  name: "HalfCheetah-v5"
+  max_episode_steps: 1000
+  render_mode: null
+
+model:
+  skill_dim: 2
+  repr_dim: 2
+  hidden_dim: 1024
+
+training:
+  total_timesteps: 20000
+  lr: 0.0001
+  gamma: 0.99
+  tau: 0.005
+  xi: 5.0
+  batch_size: 256
+  buffer_size: 100000  # smaller buffer for short run
+
+logging:
+  log_interval: 1000
+  eval_interval: 5000
+  save_interval: 10000
+
+evaluation:
+  num_episodes: 5      # fewer episodes to speed up eval
+  num_skills: 4        # fewer skills for quick plots
+  max_steps: 500       # shorter rollouts during eval
+
+paths:
+  save_dir: "./experiments/halfcheetah_20k"
+  log_dir: "./logs/halfcheetah_20k"
+
+zeroshot:
+  num_episodes: 20
+  max_steps: 500
+  goal_sampling_range: [-50.0, 50.0]
+  goal_threshold: 0.5
+
+hrl:
+  downstream_env: "HalfCheetahHurdle-v0"
+  total_episodes: 500   # shorten HRL test
+  meta_policy_lr: 0.0001
+  option_timesteps: 10
+  hrl_batch_size: 256
+  hrl_buffer_size: 100000
