@@ -1,46 +1,49 @@
 environment:
-  name: "HalfCheetah-v5"
+  name: "Humanoid-v5"
   max_episode_steps: 1000
-  render_mode: null
+  render_mode: null # Set to "human" to visualize
 
 model:
-  skill_dim: 2
-  repr_dim: 2
+  # From Table 2 in the paper for CSF on Humanoid
+  skill_dim: 8
+  # Match repr_dim to skill_dim
+  repr_dim: 8
+  # From Table 1 in the paper (general hyperparameter)
   hidden_dim: 1024
 
 training:
-  total_timesteps: 20000
+  # Humanoid is more complex and requires a longer run
+  total_timesteps: 20000000
+  # From Table 1 (general hyperparameter)
   lr: 0.0001
   gamma: 0.99
   tau: 0.005
+  # From Section 5.1 and Appendix C.3, xi is the scaling coefficient
   xi: 5.0
   batch_size: 256
-  buffer_size: 100000  # smaller buffer for short run
+  buffer_size: 1000000
+  # From Table 1, L2 regularization on phi(s) representation
+  phi_l2_reg: 0.001
 
 logging:
-  log_interval: 1000
-  eval_interval: 5000
-  save_interval: 10000
-
-evaluation:
-  num_episodes: 5      # fewer episodes to speed up eval
-  num_skills: 4        # fewer skills for quick plots
-  max_steps: 500       # shorter rollouts during eval
+  log_interval: 5000
+  eval_interval: 100000
+  save_interval: 500000
 
 paths:
-  save_dir: "./experiments/halfcheetah_20k"
-  log_dir: "./logs/halfcheetah_20k"
+  save_dir: "./experiments/humanoid_csf"
+  log_dir: "./logs/humanoid_csf"
 
 zeroshot:
-  num_episodes: 20
-  max_steps: 500
-  goal_sampling_range: [-50.0, 50.0]
+  num_episodes: 50
+  max_steps: 1000
+  goal_sampling_range: [-10.0, 10.0]
   goal_threshold: 0.5
 
 hrl:
-  downstream_env: "HalfCheetahHurdle-v0"
-  total_episodes: 500   # shorten HRL test
+  downstream_env: "HumanoidGoal-v0"
+  total_episodes: 1000
   meta_policy_lr: 0.0001
-  option_timesteps: 10
+  option_timesteps: 25
   hrl_batch_size: 256
   hrl_buffer_size: 100000

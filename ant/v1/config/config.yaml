@@ -1,46 +1,51 @@
 environment:
-  name: "HalfCheetah-v5"
+  name: "Ant-v5"
   max_episode_steps: 1000
-  render_mode: null
+  render_mode: null # Set to "human" to visualize
 
 model:
+  # From Table 2 in the paper for CSF on Ant
   skill_dim: 2
+  # Match repr_dim to skill_dim as is common practice
   repr_dim: 2
+  # From Table 1 in the paper (general hyperparameter)
   hidden_dim: 1024
 
 training:
-  total_timesteps: 20000
+  # A full training run to match paper's performance
+  total_timesteps: 10000000
+  # From Table 1 (general hyperparameter)
   lr: 0.0001
   gamma: 0.99
   tau: 0.005
+  # From Section 5.1 and Appendix C.3, xi is the scaling coefficient
   xi: 5.0
   batch_size: 256
-  buffer_size: 100000  # smaller buffer for short run
+  buffer_size: 1000000
+  # From Table 1, L2 regularization on phi(s) representation
+  phi_l2_reg: 0.001
 
 logging:
-  log_interval: 1000
-  eval_interval: 5000
-  save_interval: 10000
-
-evaluation:
-  num_episodes: 5      # fewer episodes to speed up eval
-  num_skills: 4        # fewer skills for quick plots
-  max_steps: 500       # shorter rollouts during eval
+  log_interval: 5000
+  eval_interval: 100000
+  save_interval: 500000
 
 paths:
-  save_dir: "./experiments/halfcheetah_20k"
-  log_dir: "./logs/halfcheetah_20k"
+  save_dir: "./experiments/ant_csf"
+  log_dir: "./logs/ant_csf"
 
 zeroshot:
-  num_episodes: 20
-  max_steps: 500
+  num_episodes: 50
+  max_steps: 1000
+  # From Appendix B.4: Goals for Ant are sampled from [-50, 50]
   goal_sampling_range: [-50.0, 50.0]
-  goal_threshold: 0.5
+  goal_threshold: 1.0 # A slightly larger threshold is common for Ant
 
 hrl:
-  downstream_env: "HalfCheetahHurdle-v0"
-  total_episodes: 500   # shorten HRL test
+  # From Appendix B.5: The downstream task for Ant is AntMultiGoal
+  downstream_env: "AntMultiGoal-v0"
+  total_episodes: 1000
   meta_policy_lr: 0.0001
-  option_timesteps: 10
+  option_timesteps: 25 # From Table 3 in the paper
   hrl_batch_size: 256
   hrl_buffer_size: 100000
