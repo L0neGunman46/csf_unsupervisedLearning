@@ -9,7 +9,7 @@ model:
   hidden_dim: 1024
 
 training:
-  total_timesteps: 10000000
+  total_timesteps: 1000000
   lr: 0.0001
   gamma: 0.99
   tau: 0.005
@@ -20,8 +20,8 @@ training:
 
 logging:
   log_interval: 5000
-  eval_interval: 100000
-  save_interval: 500000
+  eval_interval: 50000
+  save_interval: 100000
 
 paths:
   save_dir: "./experiments/humanoid_gym_csf"

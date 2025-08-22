@@ -13,7 +13,7 @@ model:
 
 training:
   # A full training run to match paper's performance
-  total_timesteps: 10000000
+  total_timesteps: 1000000
   # From Table 1 (general hyperparameter)
   lr: 0.0001
   gamma: 0.99
@@ -27,8 +27,8 @@ training:
 
 logging:
   log_interval: 5000
-  eval_interval: 100000
-  save_interval: 500000
+  eval_interval: 50000
+  save_interval: 100000
 
 paths:
   save_dir: "./experiments/halfcheetah_csf"

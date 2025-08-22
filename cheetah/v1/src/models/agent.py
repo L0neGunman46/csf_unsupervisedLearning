@@ -65,8 +65,6 @@ class CSFAgent:
         self.phi_optimizer = optim.Adam(self.phi.parameters(), lr=lr)
         self.psi_optimizer = optim.Adam(self.psi.parameters(), lr=lr)
         self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=lr)
-        # also optimize skill_to_repr
-        self.phi_optimizer.add_param_group({"params": self.skill_to_repr.parameters()})
 
         # Replay buffer
         self.replay_buffer = ReplayBuffer(buffer_size)
