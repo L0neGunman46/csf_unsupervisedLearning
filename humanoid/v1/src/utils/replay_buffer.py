@@ -12,13 +12,18 @@ class ReplayBuffer:
     
     def push(self, state, action, reward, next_state, done, skill):
         # Ensure all pushed items are NumPy arrays for consistent stacking
+         # Ensure all pushed items are NumPy arrays for consistent stacking
+        # Ensure skill is unit-norm (defensive; should already be)
+        skill = np.asarray(skill, dtype=np.float32)
+        n = np.linalg.norm(skill) + 1e-8
+        skill = skill / n
         self.buffer.append((
             np.asarray(state, dtype=np.float32),
             np.asarray(action, dtype=np.float32),
             np.float32(reward),
             np.asarray(next_state, dtype=np.float32),
             bool(done),
-            np.asarray(skill, dtype=np.float32)
+            skill
         ))
     
     def push_hrl(self, state:np.ndarray, skill:np.ndarray, reward, next_state:np.ndarray, done):

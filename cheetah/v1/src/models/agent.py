@@ -54,9 +54,9 @@ class CSFAgent:
         ).to(device)
 
         # Project skill into representation space for contrastive objective
-        self.skill_to_repr = torch.nn.Linear(
-            self.skill_dim, self.repr_dim, bias=False
-        ).to(device)
+        assert (
+         repr_dim == skill_dim
+        ), f"CSF requires repr_dim == skill_dim, got {repr_dim} vs {skill_dim}"
 
         # Copy parameters to target network
         self.psi_target.load_state_dict(self.psi.state_dict())
@@ -76,47 +76,45 @@ class CSFAgent:
 
     def sample_skill(self):
         """Sample skill from uniform distribution on unit hypersphere"""
-        skill = torch.randn(
-            self.skill_dim, device=device, dtype=torch.float32
-        )
+        skill = torch.randn(self.skill_dim, device=device, dtype=torch.float32)
         norm = torch.norm(skill)
         skill = skill / (norm + 1e-8)
         return skill
 
     def contrastive_loss(self, states, next_states, skills):
         """
-        states, next_states: [B, state_dim]
-        skills: [B, skill_dim]
-        """
-        batch_size = states.shape[0]
+        CSF contrastive lower bound on Iβ(S,S';Z) (Eq. 10 variant).
+        states, next_states: [B, state_dim] (normalized)
+        skills: [B, d] unit-norm, where d = repr_dim = skill_dim
+        L = - E[(phi(s')-phi(s))·z] + alpha * E[log (1/(B-1) * sum_{z'≠z} exp((phi(s')-phi(s))·z'))]
+       """
+        B = states.shape[0]
+        phi_s = self.phi(states)        # [B, d]
+        phi_s_next = self.phi(next_states)  # [B, d]
+        diff = phi_s_next - phi_s       # [B, d]
 
-        phi_s = self.phi(states)  # [B, repr_dim]
-        phi_s_next = self.phi(next_states)  # [B, repr_dim]
-        repr_diff = phi_s_next - phi_s  # [B, repr_dim]
+        # Positive term: align diff with its own z
+        pos = (diff * skills).sum(dim=1)      # [B]
+        pos_term = pos.mean()
 
-        # Project skills into representation space
-        skills_repr = self.skill_to_repr(skills)  # [B, repr_dim]
-
-        # positive term
-        positive_term = torch.sum(repr_diff * skills_repr, dim=1)  # [B]
-
-        # full in-batch negatives by permutation
-        perm = torch.randperm(batch_size, device=states.device)
-        negative_skills_repr = skills_repr[perm]  # [B, repr_dim]
-        negative_scores = torch.sum(
-            repr_diff.unsqueeze(1) * negative_skills_repr.unsqueeze(0), dim=2
-        )  # [B, B]
-        negative_term = torch.logsumexp(negative_scores, dim=1) - torch.log(
-            torch.tensor(float(batch_size), device=states.device, dtype=repr_diff.dtype)
+        # In-batch negatives: logits = diff @ skills^T, mask out diagonal
+        logits = diff @ skills.T              # [B, B]
+        mask = torch.eye(B, device=logits.device, dtype=torch.bool)
+        logits = logits.masked_fill(mask, float("-inf"))
+        # log-mean-exp over negatives (exclude positive)
+        lse = torch.logsumexp(logits, dim=1) - torch.log(
+            torch.tensor(float(B - 1), device=logits.device, dtype=logits.dtype)
         )
+        neg_term = lse.mean()
 
-        loss = -torch.mean(positive_term) + self.xi * torch.mean(negative_term)
+        alpha = self.xi  # scale negative only
+        loss = -pos_term + alpha * neg_term
 
-        # information-bottleneck regularizer
-        mi_penalty = self.phi_l2_reg * torch.mean((phi_s ** 2).sum(dim=1))
-        loss += mi_penalty
+        # small L2 on representations (optional, as in your code)
+        if self.phi_l2_reg > 0:
+            loss = loss + self.phi_l2_reg * (phi_s.pow(2).sum(dim=1).mean())
 
-        return loss, torch.mean(positive_term).item(), torch.mean(negative_term).item()
+        return loss, pos_term.item(), neg_term.item()
 
     def successor_features_loss(
         self, states, actions, next_states, skills, next_actions
@@ -214,7 +212,6 @@ class CSFAgent:
             "phi_optimizer": self.phi_optimizer.state_dict(),
             "psi_optimizer": self.psi_optimizer.state_dict(),
             "policy_optimizer": self.policy_optimizer.state_dict(),
-            "skill_to_repr": self.skill_to_repr.state_dict(),
         }
 
         torch.save(
@@ -234,8 +231,7 @@ class CSFAgent:
         self.psi.load_state_dict(checkpoint["psi_state_dict"])
         self.psi_target.load_state_dict(checkpoint["psi_target_state_dict"])
         self.policy.load_state_dict(checkpoint["policy_state_dict"])
-        if "skill_to_repr" in checkpoint:
-            self.skill_to_repr.load_state_dict(checkpoint["skill_to_repr"])
+       
 
         if load_optimizers:
             self.phi_optimizer.load_state_dict(checkpoint["phi_optimizer"])

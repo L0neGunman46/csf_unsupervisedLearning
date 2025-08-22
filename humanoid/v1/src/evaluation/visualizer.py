@@ -62,8 +62,7 @@ class SkillVisualizer:
             positions = np.array(positions)
             x_coords = positions[:, 0]
             y_coords = positions[:, 1]
-
-            if y_coords[0] is not None: # 2D plot (Ant, Quadruped, etc.)
+            if y_coords.size > 0 and y_coords[0] is not None:  # 2D plot (Ant, Quadruped, etc.)
                 ax.plot(x_coords, y_coords, color=colors[i], alpha=0.7, linewidth=2, label=f'Skill {i+1}')
                 ax.set_xlabel('X Position')
                 ax.set_ylabel('Y Position')

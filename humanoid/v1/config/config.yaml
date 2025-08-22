@@ -1,28 +1,21 @@
 environment:
   name: "Humanoid-v5"
   max_episode_steps: 1000
-  render_mode: null # Set to "human" to visualize
+  render_mode: null
 
 model:
-  # From Table 2 in the paper for CSF on Humanoid
-  skill_dim: 8
-  # Match repr_dim to skill_dim
+  skill_dim: 8         # paper uses 8 for Humanoid
   repr_dim: 8
-  # From Table 1 in the paper (general hyperparameter)
   hidden_dim: 1024
 
 training:
-  # Humanoid is more complex and requires a longer run
-  total_timesteps: 20000000
-  # From Table 1 (general hyperparameter)
+  total_timesteps: 10000000
   lr: 0.0001
   gamma: 0.99
   tau: 0.005
-  # From Section 5.1 and Appendix C.3, xi is the scaling coefficient
   xi: 5.0
   batch_size: 256
   buffer_size: 1000000
-  # From Table 1, L2 regularization on phi(s) representation
   phi_l2_reg: 0.001
 
 logging:
@@ -31,17 +24,17 @@ logging:
   save_interval: 500000
 
 paths:
-  save_dir: "./experiments/humanoid_csf"
-  log_dir: "./logs/humanoid_csf"
+  save_dir: "./experiments/humanoid_gym_csf"
+  log_dir: "./logs/humanoid_gym_csf"
 
 zeroshot:
   num_episodes: 50
   max_steps: 1000
-  goal_sampling_range: [-10.0, 10.0]
-  goal_threshold: 0.5
+  goal_sampling_range: [-10.0, 10.0]   # per paper's Appendix B.4
+  goal_threshold: 1.0
 
 hrl:
-  downstream_env: "HumanoidGoal-v0"
+  downstream_env: "HumanoidGoal-v0"    # if available; else remove HRL section
   total_episodes: 1000
   meta_policy_lr: 0.0001
   option_timesteps: 25
