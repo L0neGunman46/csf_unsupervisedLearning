@@ -21,7 +21,7 @@ training:
 logging:
   log_interval: 5000
   eval_interval: 50000
-  save_interval: 100000
+  save_interval: 10000
 
 paths:
   save_dir: "./experiments/humanoid_gym_csf"

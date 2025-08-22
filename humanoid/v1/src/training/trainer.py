@@ -21,7 +21,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class CSFTrainer:
     """Main trainer for CSF algorithm"""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], resume_path:str =None):
         self.config = config
 
         # Initialize environment with proper Gymnasium v5 API
@@ -71,10 +71,32 @@ class CSFTrainer:
         # Setup logging
         self.csv_logger = CSVLogger(config["paths"]["log_dir"], "training_log.csv")
         self.metrics_tracker = MetricsTracker(window_size=100)
+        
+        if resume_path:
+            print(f"\n--- Resuming training from checkpoint: {resume_path} ---")
+            if not os.path.exists(resume_path):
+                raise FileNotFoundError(f"Resume checkpoint not found: {resume_path}")
 
-        # Training state
-        self.timestep = 0
-        self.episode = 0
+            # Load agent models and optimizers, and get the starting timestep
+            start_timestep = self.agent.load_models(resume_path, load_optimizers=True)
+            self.timestep = start_timestep
+            self.episode = 0 # Episode count is not saved, will restart from 0
+
+            # Load the corresponding normalizer
+            normalizer_path = resume_path.replace('.pt', '_normalizer.pkl')
+            if os.path.exists(normalizer_path):
+                self.normalizer.load(normalizer_path)
+                print(f"Loaded normalizer from {normalizer_path}")
+            else:
+                print(f"Warning: Normalizer file not found at {normalizer_path}. Continuing with a fresh normalizer.")
+            
+            print(f"Successfully resumed from timestep: {self.timestep}")
+            print("Note: The replay buffer will be repopulated from scratch.")
+        else:
+             # Training state
+            self.timestep = 0
+            self.episode = 0   
+
         self.state_positions = []
         self.episode_rewards = []
         self.episode_lengths = []
@@ -84,7 +106,8 @@ class CSFTrainer:
         os.makedirs(config["paths"]["log_dir"], exist_ok=True)
 
         # Log hyperparameters
-        self.csv_logger.log_hyperparameters(config)
+        if not resume_path:
+            self.csv_logger.log_hyperparameters(config)
 
     def train(self):
         """Main training loop"""
