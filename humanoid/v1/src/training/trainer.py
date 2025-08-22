@@ -121,8 +121,7 @@ class CSFTrainer:
         print(f"Logging to: {self.csv_logger.filepath}")
 
         start_time = time.time()
-
-        with tqdm(total=total_timesteps, desc="Training") as pbar:
+        with tqdm(total=total_timesteps, desc="Training", initial=self.timestep) as pbar:
             while self.timestep < total_timesteps:
                 self._run_episode()
 
